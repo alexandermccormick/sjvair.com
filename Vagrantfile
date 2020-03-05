@@ -4,7 +4,7 @@
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-    config.vm.box = "ubuntu/bionic64"
+    config.vm.box = "generic/ubuntu1804"
 
     config.ssh.username = "vagrant"
 
@@ -17,9 +17,13 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
     # Configure virtual machine specs. Keep it simple, single user.
     config.vm.provider :virtualbox do |p|
-        p.customize ["modifyvm", :id, "--memory", 4096]
-        p.customize ["modifyvm", :id, "--cpus", 4]
+        p.memory = 4096
+        p.cpus = 4
         p.customize ["modifyvm", :id, "--cpuexecutioncap", 50]
+    end
+    config.vm.provider :libvirt do |p|
+        p.memory = 4096
+        p.cpus = 4
     end
 
     # Config hostname and IP address so entry can be added to HOSTS file
