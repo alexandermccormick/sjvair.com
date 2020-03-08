@@ -16,14 +16,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     # config.vm.network "forwarded_port", guest: 5432, host: 5432 # Postgres
 
     # Configure virtual machine specs. Keep it simple, single user.
+    config.vm.provider.memory = 4096
+    config.vm.provider.cpus = 4
     config.vm.provider :virtualbox do |p|
-        p.memory = 4096
-        p.cpus = 4
         p.customize ["modifyvm", :id, "--cpuexecutioncap", 50]
-    end
-    config.vm.provider :libvirt do |p|
-        p.memory = 4096
-        p.cpus = 4
     end
 
     # Config hostname and IP address so entry can be added to HOSTS file
