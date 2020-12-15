@@ -1,15 +1,20 @@
 <template>
 <div v-if="monitor" class="monitor-graph">
-  <!-- <div class="level">
-    <div class="level-left">
-      <div class="level-item">{{ field.label }}</div>
-    </div>
-    <div class="level-right">
-      <div class="level-item">
-        <strong>Current: {{ field.latest(monitor) }}</strong>
+  <div class="date-select columns is-multiline is-mobile">
+    <div class="date-select-column">
+      <div class="columns">
+        <div class="date-select-column">
+          <label for="startDate">Start Date:</label>
+          <datepicker id="startDate" typeable placeholder="Start Date" v-model="dateStart"></datepicker>
+        </div>
+        <div class="date-select-column">
+          <label for="endDate">End Date:</label>
+          <datepicker id="endDate" typeable placeholder="Start Date" v-model="dateEnd"></datepicker>
+        </div>
       </div>
     </div>
-  </div> -->
+    <button class="button date-select-column" v-on:click="loadAllEntries">View Data!</button>
+  </div>
   <div class="chart">
     <apexchart ref="chart" type="line" width="100%" height="250px" :options="options"></apexchart>
   </div>
@@ -21,17 +26,31 @@ import _ from 'lodash';
 import moment from 'moment-timezone';
 import Vue from 'vue'
 import VueApexCharts from 'vue-apexcharts'
+import Datepicker from "vuejs-datepicker/dist/vuejs-datepicker.esm.js";
 
-Vue.component('apexchart', VueApexCharts)
+function formatDate(date) {
+  return moment(date).utc().format('YYYY-MM-DD HH:mm:ss');
+}
 
 export default {
   name: 'monitor-graph',
+  components: {
+    'apexchart': VueApexCharts,
+    Datepicker
+  },
   props: {
     monitor: Object,
   },
 
   data() {
+    // Set the inital values for the date pickers
+    // Default range: last 3 days
+    const dateEnd = Date.now();
+    const dateStart = dateEnd - (60000 * 60 * 24 * 3);
+
     return {
+      dateEnd,
+      dateStart,
       entries: {},
       interval: null,
       fields: {
@@ -149,22 +168,17 @@ export default {
       });
     },
 
-    async loadEntries(sensor, page, timestamp) {
+    async loadEntries(sensor, page) {
       if(!page) {
         page = 1;
-      }
-
-      if(!timestamp){
-        timestamp = moment.utc()
-          .subtract(72, 'hours')
-          .format('YYYY-MM-DD HH:mm:ss');
       }
 
       return await this.$http.get(`monitors/${this.monitor.id}/entries/`, {
         params: {
           fields: _.join(_.keys(this.fields[this.monitor.device]), ','),
           page: page,
-          timestamp__gte: timestamp,
+          timestamp__gte: formatDate(this.dateStart),
+          timestamp__lte: formatDate(this.dateEnd),
           sensor: sensor
         }
       })
@@ -172,7 +186,7 @@ export default {
         .then(async response => {
           let data = response.data;
           if(response.has_next_page){
-            let nextPage = await this.loadEntries(sensor, page + 1, timestamp);
+            let nextPage = await this.loadEntries(sensor, page + 1);
             data.push(...nextPage);
           }
 
